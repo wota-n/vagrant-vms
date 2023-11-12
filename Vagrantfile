@@ -11,11 +11,20 @@ Vagrant.configure("2") do |config|
     usermod -a -G microk8s vagrant
   EOF
 
-  (1..2).each do |i|
-    config.vm.define "node-k8s#{i}" do |node|
-      node.vm.hostname = "node-k8s#{i}"
+  #master node
+  config.vm.define "master-node" do |master|
+    master.vm.hostname = "master"
+    master.vm.provider "virtualbox" do |master|
+      master.name = "master"
+    end
+  end
+
+#worker nodes
+  (1..3).each do |i|
+    config.vm.define "worker-#{i}" do |node|
+      node.vm.hostname = "worker-#{i}"
       node.vm.provider "virtualbox" do |node|
-        node.name = "node-k8s#{i}"
+        node.name = "worker-#{i}"
       end
     end
   end
