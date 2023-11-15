@@ -1,2 +1,2 @@
-# vagrant-vms
-Create multiple VMs with Vagrant
+# Local Kubernetes Cluster with Vagrant
+This project is to auto provision Virtual Machines using Vagrant followed by automating the process of configuring a full k8s cluster rather than using k3s or microk8s.

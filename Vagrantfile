@@ -26,6 +26,12 @@ Vagrant.configure("2") do |config|
     sed -i 's/ExecStart.*/& --exec-opt native.cgroupdriver=systemd/' /lib/systemd/system/docker.service
     sudo systemctl daemon-reload
     sudo systemctl restart docker
+    sudo modprobe overlay
+    sudo modprobe br_netfilter
+    sudo sysctl -w net.ipv4.ip_forward=1
+    sudo sysctl -w net.bridge.bridge-nf-call-ip6tables=1
+    sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
+    sudo sysctl --system
   EOF
 
   #master node
