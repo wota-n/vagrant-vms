@@ -1,13 +1,13 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "generic/ubuntu1804"
-  config.vm.network "public_network", use_dhcp_assigned_default_route: true
+  # config.vm.network "public_network", use_dhcp_assigned_default_route: true
   config.vm.provider "virtualbox" do |node|
     node.memory = 2048
     node.cpus = 2
   end
   config.vm.provision "shell", inline: <<-EOF
     sudo apt-get update
-    sudo apt-get install ca-certificates curl gnupg jq -y
+    sudo apt-get install ca-certificates curl gnupg -y
     sudo install -m 0755 -d /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
     sudo chmod a+r /etc/apt/keyrings/docker.gpg
@@ -26,6 +26,7 @@ Vagrant.configure("2") do |config|
     sed -i 's/ExecStart.*/& --exec-opt native.cgroupdriver=systemd/' /lib/systemd/system/docker.service
     sudo systemctl daemon-reload
     sudo systemctl restart docker
+    sudo swapoff -a
     sudo modprobe overlay
     sudo modprobe br_netfilter
     sudo sysctl -w net.ipv4.ip_forward=1
@@ -35,20 +36,29 @@ Vagrant.configure("2") do |config|
   EOF
 
   #master node
-  config.vm.define "master-node" do |master|
+  config.vm.define "master" do |master|
     master.vm.hostname = "master"
-    master.vm.provider "virtualbox" do |master|
+    master.vm.provision "shell", inline: <<-EOF
+      sudo rm /etc/containerd/config.toml
+      sudo systemctl restart containerd
+      sudo kubeadm init --apiserver-advertise-address 192.168.50.1 --control-plane-endpoint 192.168.50.1
+    EOF
+    master.vm.provider :virtualbox do |master|
       master.name = "master"
     end
+    master.vm.network "public_network", ip: "192.168.50.1"
   end
-
-#worker nodes
-  # (1..1).each do |i|
-  #   config.vm.define "worker-#{i}" do |node|
-  #     node.vm.hostname = "worker-#{i}"
-  #     node.vm.provider "virtualbox" do |node|
-  #       node.name = "worker-#{i}"
-  #     end
-  #   end
-  # end
 end
+
+#    worker_ip="192.168.50."
+#   # worker nodes
+#   (1..1).each do |i|
+#     config.vm.define "worker-#{i}" do |worker|
+#       worker.vm.hostname = "worker-#{i}"
+#       worker.vm.provider "virtualbox" do |worker|
+#         worker.name = "worker-#{i}"
+#       end
+#       worker.vm.network "public_network", ip: worker_ip + "#{i+1}"
+#     end
+#   end
+# end
