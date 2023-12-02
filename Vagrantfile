@@ -41,24 +41,32 @@ Vagrant.configure("2") do |config|
     master.vm.provision "shell", inline: <<-EOF
       sudo rm /etc/containerd/config.toml
       sudo systemctl restart containerd
-      sudo kubeadm init --apiserver-advertise-address 192.168.50.1 --control-plane-endpoint 192.168.50.1
+      sudo kubeadm init --apiserver-advertise-address 192.168.50.10 --control-plane-endpoint 192.168.50.10
+      mkdir -p $HOME/.kube
+      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+      kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
     EOF
     master.vm.provider :virtualbox do |master|
       master.name = "master"
     end
-    master.vm.network "public_network", ip: "192.168.50.1"
+    master.vm.network "public_network", ip: "192.168.50.10"
+  end
+
+  worker_ip="192.168.50."
+  # worker nodes
+  # requires kubeadm join command to combine into cluster with master
+  (1..1).each do |i|
+    config.vm.define "worker-#{i}" do |worker|
+      worker.vm.hostname = "worker-#{i}"
+      worker.vm.provision "shell", inline: <<-EOF
+        sudo rm /etc/containerd/config.toml
+        sudo systemctl restart containerd
+      EOF
+      worker.vm.provider "virtualbox" do |worker|
+        worker.name = "worker-#{i}"
+      end
+      worker.vm.network "public_network", ip: worker_ip + "#{i+20}"
+    end
   end
 end
-
-#    worker_ip="192.168.50."
-#   # worker nodes
-#   (1..1).each do |i|
-#     config.vm.define "worker-#{i}" do |worker|
-#       worker.vm.hostname = "worker-#{i}"
-#       worker.vm.provider "virtualbox" do |worker|
-#         worker.name = "worker-#{i}"
-#       end
-#       worker.vm.network "public_network", ip: worker_ip + "#{i+1}"
-#     end
-#   end
-# end
